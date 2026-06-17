@@ -25,6 +25,9 @@ export interface Match {
   stage: 'group' | 'r32' | 'r16' | 'qf' | 'sf' | '3rd' | 'final';
   groupCode?: string;
   matchday: number;
+  homeScore?: number;
+  awayScore?: number;
+  status?: 'upcoming' | 'live' | 'finished';
 }
 
 export interface Prediction {

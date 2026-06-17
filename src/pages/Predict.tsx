@@ -23,6 +23,10 @@ export default function Predict() {
       .sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`));
   }, [matches, predictions]);
 
+  const finishedMatches = useMemo(() => {
+    return matches.filter((m) => m.status === 'finished');
+  }, [matches]);
+
   const handleQuickPredict = (matchId: string, result: Prediction['result']) => {
     addPrediction({ matchId, result, confidence: 75 });
   };
@@ -35,6 +39,15 @@ export default function Predict() {
       {label}
     </button>
   );
+
+  const isCorrectPrediction = (prediction: Prediction) => {
+    const match = matches.find((m) => m.id === prediction.matchId);
+    if (!match || match.status !== 'finished') return null;
+    if (match.homeScore === match.awayScore && prediction.result === 'draw') return true;
+    if (match.homeScore! > match.awayScore! && prediction.result === 'home') return true;
+    if (match.awayScore! > match.homeScore! && prediction.result === 'away') return true;
+    return false;
+  };
 
   return (
     <div className="min-h-screen bg-[#0A1F1C] text-white pb-12">
@@ -132,22 +145,53 @@ export default function Predict() {
                 const home = getTeamById(match.homeTeamId);
                 const away = getTeamById(match.awayTeamId);
                 const resultLabel = p.result === 'home' ? '主胜' : p.result === 'draw' ? '平局' : '客胜';
+                const isCorrect = isCorrectPrediction(p);
+                const isFinished = match.status === 'finished';
+
                 return (
                   <div key={p.id} className="bg-[#0D2B26] rounded-xl p-4 border border-white/5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm">
                         <span>{home?.flag ?? '?'}</span>
                         <span className="font-medium">{home?.name ?? match.homeTeamId}</span>
-                        <span className="text-gray-500">vs</span>
+                        {isFinished && match.homeScore !== undefined ? (
+                          <span className={`font-bold ${match.homeScore! > match.awayScore! ? 'text-[#00E676]' : 'text-gray-400'}`}>
+                            {match.homeScore}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">vs</span>
+                        )}
+                        {isFinished && match.awayScore !== undefined && (
+                          <span className={`font-bold ${match.awayScore! > match.homeScore! ? 'text-[#00E676]' : 'text-gray-400'}`}>
+                            {match.awayScore}
+                          </span>
+                        )}
+                        {!isFinished && <span className="text-gray-500">vs</span>}
                         <span className="font-medium">{away?.name ?? match.awayTeamId}</span>
                         <span>{away?.flag ?? '?'}</span>
                       </div>
-                      <span className="text-xs px-2 py-1 rounded-full bg-[#00E676]/10 text-[#00E676] font-medium">
-                        {resultLabel}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {isFinished ? (
+                          isCorrect ? (
+                            <span className="text-xs px-2 py-1 rounded-full bg-[#00E676]/20 text-[#00E676] font-medium">
+                              ✓ 正确
+                            </span>
+                          ) : (
+                            <span className="text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400 font-medium">
+                              ✗ 错误
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-xs px-2 py-1 rounded-full bg-[#00E676]/10 text-[#00E676] font-medium">
+                            {resultLabel}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-500">信心 {p.confidence}%</span>
+                      <span className="text-xs text-gray-500">
+                        {isFinished ? '已完成' : `信心 ${p.confidence}%`}
+                      </span>
                       <button
                         onClick={() => navigate(`/match/${match.id}`)}
                         className="text-xs text-gray-400 hover:text-[#00E676] transition-colors"

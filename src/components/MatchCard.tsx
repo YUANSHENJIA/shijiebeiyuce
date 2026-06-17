@@ -29,6 +29,8 @@ export default function MatchCard({ matchId, compact = false }: MatchCardProps) 
   const drawPercent = stats.total > 0 ? Math.round((stats.draw / stats.total) * 100) : 0;
   const awayPercent = stats.total > 0 ? 100 - homePercent - drawPercent : 0;
 
+  const isFinished = match.status === 'finished';
+
   return (
     <div
       onClick={() => navigate(`/match/${matchId}`)}
@@ -39,8 +41,13 @@ export default function MatchCard({ matchId, compact = false }: MatchCardProps) 
       )}
     >
       {/* Stage badge */}
-      <div className="mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <StageBadge stage={match.stage} />
+        {isFinished && (
+          <span className="text-[10px] text-wc-muted bg-wc-darker px-2 py-0.5 rounded-full">
+            已结束
+          </span>
+        )}
       </div>
 
       {/* Teams */}
@@ -53,11 +60,31 @@ export default function MatchCard({ matchId, compact = false }: MatchCardProps) 
           </span>
         </div>
 
-        {/* VS */}
+        {/* Score or VS */}
         <div className="flex-shrink-0 px-2">
-          <span className={cn('font-heading font-bold text-wc-muted', compact ? 'text-xs' : 'text-sm')}>
-            VS
-          </span>
+          {isFinished ? (
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                'font-heading font-bold',
+                compact ? 'text-lg' : 'text-2xl',
+                match.homeScore! > match.awayScore! ? 'text-wc-accent' : 'text-wc-muted'
+              )}>
+                {match.homeScore}
+              </span>
+              <span className="text-wc-muted font-heading">-</span>
+              <span className={cn(
+                'font-heading font-bold',
+                compact ? 'text-lg' : 'text-2xl',
+                match.awayScore! > match.homeScore! ? 'text-wc-accent' : 'text-wc-muted'
+              )}>
+                {match.awayScore}
+              </span>
+            </div>
+          ) : (
+            <span className={cn('font-heading font-bold text-wc-muted', compact ? 'text-xs' : 'text-sm')}>
+              VS
+            </span>
+          )}
         </div>
 
         {/* Away team */}
